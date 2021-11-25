@@ -1,14 +1,18 @@
 package com.github.alperkurtul.firebaseuserauthentication.service;
 
-import com.github.alperkurtul.firebaseuserauthentication.bean.FirebaseRefreshTokenToIdTokenResponseBean;
-import com.github.alperkurtul.firebaseuserauthentication.bean.FirebaseSignInSignUpResponseBean;
-import com.github.alperkurtul.firebaseuserauthentication.constants.ApiUrlConstants;
-import com.github.alperkurtul.firebaseuserauthentication.exception.HttpBadRequestException;
-import com.github.alperkurtul.firebaseuserauthentication.exception.HttpNotFoundException;
-import com.github.alperkurtul.firebaseuserauthentication.exception.HttpUnauthorizedException;
-import com.github.alperkurtul.firebaseuserauthentication.utility.StringUtility;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
 import org.json.JSONObject;
-import org.springframework.http.*;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -16,30 +20,34 @@ import org.springframework.util.ResourceUtils;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.*;
-import java.util.Properties;
+import com.github.alperkurtul.firebaseuserauthentication.bean.FirebaseRefreshTokenToIdTokenResponseBean;
+import com.github.alperkurtul.firebaseuserauthentication.bean.FirebaseSignInSignUpResponseBean;
+import com.github.alperkurtul.firebaseuserauthentication.constants.ApiUrlConstants;
+import com.github.alperkurtul.firebaseuserauthentication.exception.HttpBadRequestException;
+import com.github.alperkurtul.firebaseuserauthentication.exception.HttpNotFoundException;
+import com.github.alperkurtul.firebaseuserauthentication.exception.HttpUnauthorizedException;
+import com.github.alperkurtul.firebaseuserauthentication.utility.StringUtility;
 
 @Component
 public class UserAuthenticationServiceImpl implements UserAuthenticationService {
 
     private String firebaseWebApiKey;
     private StringUtility stringUtility = null;
+    
+    @Value("classpath*:firebase-web-api-key.txt")
+    private File fileApiKey;
 
-    public UserAuthenticationServiceImpl() {
+	public UserAuthenticationServiceImpl() {
+		stringUtility = new StringUtility();
 
-        stringUtility = new StringUtility();
-
-        Properties properties = new Properties();
-        try {
-            File file = ResourceUtils.getFile("classpath:firebase-web-api-key.txt");
-            InputStream in = new FileInputStream(file);
-            properties.load(in);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        this.firebaseWebApiKey = properties.getProperty("firebase-web-api-key");
-
-    }
+		final Properties properties = new Properties();
+		try (InputStream in = new FileInputStream(fileApiKey)) {
+			properties.load(in);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		this.firebaseWebApiKey = properties.getProperty("firebase-web-api-key");
+	}
 
     @Override
     public FirebaseSignInSignUpResponseBean signInWithEmailAndPassword(String email, String password) {
